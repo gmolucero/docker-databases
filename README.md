@@ -1,0 +1,70 @@
+# docker-db
+
+Compose files independientes para levantar bases de datos locales de desarrollo: MariaDB, MySQL, MongoDB y PostgreSQL. Cada motor tiene su propio archivo `.yml`, su propio archivo de variables de entorno y su propio volumen de datos — se pueden levantar juntos o por separado sin chocar entre sí.
+
+## Servicios
+
+| Servicio | Compose file | Contenedor | Puerto host | Imagen |
+|---|---|---|---|---|
+| MariaDB | `mariadb.yml` | `mariadb` | `3306` | `mariadb:11` |
+| MySQL | `mysql.yml` | `mysql` | `3307` | `mysql:5.7` |
+| MongoDB | `mongo.yml` | `mongodb` | `27017` | `mongo:7` |
+| PostgreSQL | `postgres.yml` | `postgres` | `5432` | `postgres:14.3` |
+
+## Cómo levantar cada uno
+
+La sustitución de variables `${...}` dentro de cada `.yml` se resuelve con el archivo pasado en `--env-file`, no con `env_file:` del servicio — por eso hay que indicarlo explícito en cada comando:
+
+```bash
+docker compose --env-file .env.mariadb  -f mariadb.yml  up -d
+docker compose --env-file .env.mysql    -f mysql.yml    up -d
+docker compose --env-file .env.mongo    -f mongo.yml    up -d
+docker compose --env-file .env.postgres -f postgres.yml up -d
+```
+
+Cada `.yml` trae este mismo comando como comentario en su primera línea.
+
+## Variables de entorno
+
+Un `.env.<servicio>` por cada compose file (no hay un `.env` compartido):
+
+- **`.env.mariadb`** / **`.env.mysql`** — `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `MYSQL_ROOT_HOST`
+- **`.env.mongo`** — `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD`
+- **`.env.postgres`** — `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_HOST`, `DB_PORT`
+
+Estos archivos contienen contraseñas en texto plano y no deben commitearse. Si en algún momento este directorio se convierte en repo git, agregar `.env.*` a `.gitignore` antes del primer commit.
+
+## Volúmenes de datos
+
+Cada servicio persiste en su propia carpeta bajo `./data/`, montada por bind mount:
+
+| Servicio | Carpeta host |
+|---|---|
+| MariaDB | `./data/mariadb-data/db` |
+| MySQL | `./data/mysql57-data/db` |
+| MongoDB | `./data/mongo` |
+| PostgreSQL | `./data/postgres_data` |
+
+**Nota:** `./data/mariadb-data/db` contiene datos reales en uso (más de 20 bases: `laravel`, `dashboard`, `miflota`, `wordpress`, etc.). Originalmente esos datos vivían en `./data/mysql-data/db`, compartida entre `mariadb.yml` y `mysql.yml` — se separaron para evitar que ambos motores escribieran sobre el mismo volumen. `./data/mysql-data/db` sigue existiendo como copia de respaldo de ese momento, pero ya no la usa ningún compose file de este directorio. `./data/mysql57-data/db` es un volumen nuevo y vacío, exclusivo para `mysql.yml`.
+
+## Notas por servicio
+
+- **mysql:5.7** no puede leer el formato InnoDB que escribe MariaDB — por eso `mysql.yml` usa un volumen propio y vacío en vez de compartir el de MariaDB.
+- **Mongo**: el usuario root se crea automáticamente solo la primera vez que el volumen de datos está vacío (variables `MONGO_INITDB_ROOT_*`). Si el volumen ya tiene datos previos sin usuarios configurados, hay que crearlo a mano usando la excepción de conexión local que Mongo permite cuando no existe ningún usuario:
+  ```bash
+  docker exec -it mongodb mongosh --quiet admin --eval '
+  db.createUser({
+    user: "mongo",
+    pwd: "mongopassword",
+    roles: [{ role: "root", db: "admin" }]
+  })'
+  ```
+
+## Verificar que un servicio esté funcional
+
+```bash
+docker exec mariadb  mariadb  -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
+docker exec mysql    mysql    -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
+docker exec mongodb  mongosh --quiet --eval "db.runCommand({ping:1})" -u mongo -p mongopassword --authenticationDatabase admin
+docker exec postgres pg_isready -U postgres
+```

@@ -1,0 +1,23 @@
+# docker compose --env-file .env.mariadb -f mariadb.yml up -d
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST}
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - './data/mariadb-data/db:/var/lib/mysql'
+    networks:
+      - dsy
+
+networks:
+  dsy:
+    driver: bridge
