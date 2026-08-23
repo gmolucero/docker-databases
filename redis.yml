@@ -1,0 +1,17 @@
+# docker compose --env-file .env.redis -f redis.yml up -d
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - dsy
+
+networks:
+  dsy:
+    driver: bridge

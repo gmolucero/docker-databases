@@ -1,8 +1,8 @@
-# docker compose --env-file .env.mysql -f mysql.yml up -d
+# docker compose --env-file .env.mysql8 -f mysql8.yml up -d
 services:
-  mysql:
-    image: mysql:5.7
-    container_name: mysql
+  mysql8:
+    image: mysql:8
+    container_name: mysql8
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -10,11 +10,11 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST}
     ports:
-      - '3307:3306'
+      - '3308:3306'
     expose:
       - '3306'
     volumes:
-      - './data/mysql57-data/db:/var/lib/mysql'
+      - './data/mysql8-data/db:/var/lib/mysql'
     networks:
       - dsy
 

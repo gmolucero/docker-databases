@@ -1,0 +1,23 @@
+# docker compose --env-file .env.mysql57 -f mysql57.yml up -d
+services:
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql57
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST}
+    ports:
+      - '3307:3306'
+    expose:
+      - '3306'
+    volumes:
+      - './data/mysql57-data/db:/var/lib/mysql'
+    networks:
+      - dsy
+
+networks:
+  dsy:
+    driver: bridge
