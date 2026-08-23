@@ -1,4 +1,4 @@
-# docker compose --env-file .env.mariadb -f mariadb.yml up -d
+# docker compose --env-file .env.mariadb --env-file .env.network -f mariadb.yml up -d
 services:
   mariadb:
     image: mariadb:11
@@ -16,8 +16,9 @@ services:
     volumes:
       - './data/mariadb-data/db:/var/lib/mysql'
     networks:
-      - dsy
+      - gldev
 
 networks:
-  dsy:
-    driver: bridge
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

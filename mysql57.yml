@@ -1,4 +1,4 @@
-# docker compose --env-file .env.mysql57 -f mysql57.yml up -d
+# docker compose --env-file .env.mysql57 --env-file .env.network -f mysql57.yml up -d
 services:
   mysql57:
     image: mysql:5.7
@@ -16,8 +16,9 @@ services:
     volumes:
       - './data/mysql57-data/db:/var/lib/mysql'
     networks:
-      - dsy
+      - gldev
 
 networks:
-  dsy:
-    driver: bridge
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

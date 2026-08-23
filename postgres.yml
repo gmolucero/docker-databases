@@ -1,4 +1,4 @@
-# docker compose --env-file .env.postgres -f postgres.yml up -d
+# docker compose --env-file .env.postgres --env-file .env.network -f postgres.yml up -d
 services:
   db:
     image: postgres:14.3
@@ -12,3 +12,10 @@ services:
     container_name: postgres
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
+    networks:
+      - gldev
+
+networks:
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

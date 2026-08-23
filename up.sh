@@ -22,6 +22,20 @@ usage() {
   exit 1
 }
 
+ensure_network() {
+  if [[ ! -f .env.network ]]; then
+    echo "⚠️  No existe .env.network. Copia .env.network.example y ajústalo si hace falta." >&2
+    exit 1
+  fi
+  # shellcheck disable=SC1091
+  local network_name
+  network_name="$(grep -E '^NETWORK_NAME=' .env.network | cut -d= -f2- | tr -d "'\"")"
+  if ! docker network inspect "$network_name" >/dev/null 2>&1; then
+    echo "🌐 Creando red $network_name..."
+    docker network create "$network_name" >/dev/null
+  fi
+}
+
 SERVICES=()
 
 while [[ $# -gt 0 ]]; do
@@ -51,7 +65,7 @@ up_service() {
   fi
 
   echo "▶️  Levantando $name..."
-  docker compose --env-file "$compose_file" -f "${name}.yml" up -d
+  docker compose --env-file "$compose_file" --env-file .env.network -f "${name}.yml" up -d
 }
 
 if [[ ${#SERVICES[@]} -eq 0 ]]; then
@@ -64,6 +78,8 @@ for svc in "${SERVICES[@]}"; do
     usage
   fi
 done
+
+ensure_network
 
 status=0
 for svc in "${SERVICES[@]}"; do

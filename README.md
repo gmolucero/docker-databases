@@ -24,24 +24,33 @@ cp .env.mysql8.example   .env.mysql8
 cp .env.mongo.example    .env.mongo
 cp .env.postgres.example .env.postgres
 cp .env.redis.example    .env.redis
+cp .env.network.example  .env.network
 ```
 
 Edita cada `.env.<servicio>` recién creado y reemplaza los valores `changeme` por credenciales propias. Estos archivos (`.env`, `.env.*`, excepto los `.example`) están en `.gitignore` — no deben commitearse nunca.
 
 ## Cómo levantar cada uno
 
-La sustitución de variables `${...}` dentro de cada `.yml` se resuelve con el archivo pasado en `--env-file`, no con `env_file:` del servicio — por eso hay que indicarlo explícito en cada comando:
+La sustitución de variables `${...}` dentro de cada `.yml` se resuelve con el/los archivo(s) pasados en `--env-file`, no con `env_file:` del servicio — por eso hay que indicarlos explícito en cada comando. Cada servicio necesita **dos** `--env-file`: el suyo propio y `.env.network` (para resolver `${NETWORK_NAME}`):
 
 ```bash
-docker compose --env-file .env.mariadb  -f mariadb.yml  up -d
-docker compose --env-file .env.mysql57  -f mysql57.yml  up -d
-docker compose --env-file .env.mysql8   -f mysql8.yml   up -d
-docker compose --env-file .env.mongo    -f mongo.yml    up -d
-docker compose --env-file .env.postgres -f postgres.yml up -d
-docker compose --env-file .env.redis    -f redis.yml    up -d
+docker compose --env-file .env.mariadb  --env-file .env.network -f mariadb.yml  up -d
+docker compose --env-file .env.mysql57  --env-file .env.network -f mysql57.yml  up -d
+docker compose --env-file .env.mysql8   --env-file .env.network -f mysql8.yml   up -d
+docker compose --env-file .env.mongo    --env-file .env.network -f mongo.yml    up -d
+docker compose --env-file .env.postgres --env-file .env.network -f postgres.yml up -d
+docker compose --env-file .env.redis    --env-file .env.network -f redis.yml    up -d
 ```
 
 Cada `.yml` trae este mismo comando como comentario en su primera línea.
+
+**Importante:** como la red `gldev` es `external: true` (para que la compartan proyectos compose independientes), tiene que existir *antes* de levantar cualquier servicio:
+
+```bash
+docker network create gldev
+```
+
+`up.sh` la crea automáticamente si no existe.
 
 ### Con el script `up.sh`
 
@@ -54,7 +63,7 @@ También hay un script que envuelve estos comandos:
 ./up.sh -d mariadb -d mongo      # levanta varias (repite -d para cada una)
 ```
 
-Si el `.env.<servicio>` correspondiente no existe (ver "Configuración inicial"), el script avisa y no intenta levantar ese servicio.
+Si el `.env.<servicio>` correspondiente (o `.env.network`) no existe (ver "Configuración inicial"), el script avisa y no intenta levantar ese servicio. Antes de levantar cualquiera, crea la red `gldev` si todavía no existe.
 
 ### Bajarlas con `down.sh`
 
@@ -77,6 +86,13 @@ Un `.env.<servicio>` por cada compose file (no hay un `.env` compartido). Las pl
 - **`.env.mongo`** — `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD`
 - **`.env.postgres`** — `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_HOST`, `DB_PORT`
 - **`.env.redis`** — `REDIS_PASSWORD`
+- **`.env.network`** — `NETWORK_NAME` (compartida por los 6 servicios, ver "Red compartida" abajo)
+
+## Red compartida
+
+Los 6 servicios se conectan a una misma red Docker externa (`external: true`) cuyo nombre viene de `NETWORK_NAME` en `.env.network` — en local se llama **`gldev`**. Al ser `external`, no la crea `docker compose` automáticamente: hay que crearla una vez con `docker network create gldev` (`up.sh` lo hace por ti si no existe).
+
+Esto permite que los contenedores se resuelvan entre sí por nombre (`mariadb`, `mysql57`, `mysql8`, `mongodb`, `postgres`, `redis`), útil si otra app corre en un contenedor aparte y necesita hablarle a estas bases sin pasar por el host.
 
 ## Volúmenes de datos
 

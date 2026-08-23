@@ -1,4 +1,4 @@
-# docker compose --env-file .env.redis -f redis.yml up -d
+# docker compose --env-file .env.redis --env-file .env.network -f redis.yml up -d
 services:
   redis:
     image: redis:7
@@ -10,8 +10,9 @@ services:
     volumes:
       - ./data/redis:/data
     networks:
-      - dsy
+      - gldev
 
 networks:
-  dsy:
-    driver: bridge
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

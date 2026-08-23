@@ -1,4 +1,4 @@
-# docker compose --env-file .env.mongo -f mongo.yml up -d
+# docker compose --env-file .env.mongo --env-file .env.network -f mongo.yml up -d
 services:
   mongo:
     image: mongo:7
@@ -11,3 +11,10 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - ./data/mongo:/data/db
+    networks:
+      - gldev
+
+networks:
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

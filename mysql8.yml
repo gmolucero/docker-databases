@@ -1,4 +1,4 @@
-# docker compose --env-file .env.mysql8 -f mysql8.yml up -d
+# docker compose --env-file .env.mysql8 --env-file .env.network -f mysql8.yml up -d
 services:
   mysql8:
     image: mysql:8
@@ -16,8 +16,9 @@ services:
     volumes:
       - './data/mysql8-data/db:/var/lib/mysql'
     networks:
-      - dsy
+      - gldev
 
 networks:
-  dsy:
-    driver: bridge
+  gldev:
+    name: ${NETWORK_NAME}
+    external: true

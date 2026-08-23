@@ -53,7 +53,7 @@ down_service() {
   fi
 
   echo "⏹️  Bajando $name..."
-  docker compose --env-file "$compose_file" -f "${name}.yml" down
+  docker compose --env-file "$compose_file" --env-file .env.network -f "${name}.yml" down
 }
 
 if [[ ${#SERVICES[@]} -eq 0 ]]; then
